@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Directus Schema Sync Panel</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: #0d1117;
+        color: #c9d1d9;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .container {
+        display: flex;
+        height: 100vh;
+      }
+
+      .left-panel {
+        width: 400px;
+        background: #161b22;
+        border-right: 1px solid #30363d;
+        padding: 20px;
+        overflow-y: auto;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .right-panel {
+        flex: 1;
+        background: #0d1117;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin-bottom: 30px;
+        color: #f0f6fc;
+      }
+
+      h2 {
+        font-size: 18px;
+        margin-bottom: 15px;
+        color: #c9d1d9;
+        border-bottom: 2px solid #58a6ff;
+        padding-bottom: 8px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #c9d1d9;
+        font-size: 14px;
+      }
+
+      input[type="text"],
+      input[type="url"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #0d1117;
+        color: #c9d1d9;
+        transition: all 0.3s;
+      }
+
+      input[type="text"]:focus,
+      input[type="url"]:focus {
+        outline: none;
+        border-color: #58a6ff;
+        background: #161b22;
+        box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s;
+      }
+
+      .btn-primary {
+        background: #238636;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #2ea043;
+        box-shadow: 0 0 8px rgba(35, 134, 54, 0.4);
+      }
+
+      .btn-primary:disabled {
+        background: #21262d;
+        color: #6e7681;
+        cursor: not-allowed;
+      }
+
+      .btn-success {
+        background: #238636;
+        color: white;
+      }
+
+      .btn-success:hover {
+        background: #2ea043;
+      }
+
+      .btn-danger {
+        background: #da3633;
+        color: white;
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+
+      .btn-danger:hover {
+        background: #f85149;
+        box-shadow: 0 0 8px rgba(218, 54, 51, 0.4);
+      }
+
+      .btn-secondary {
+        background: #21262d;
+        color: #c9d1d9;
+        border: 1px solid #30363d;
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+
+      .btn-secondary:hover {
+        background: #30363d;
+        border-color: #484f58;
+      }
+
+      .btn-warning {
+        background: #d29922;
+        color: white;
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+
+      .btn-warning:hover {
+        background: #e3b341;
+        box-shadow: 0 0 8px rgba(210, 153, 34, 0.4);
+      }
+
+      .branch-item {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 10px;
+        position: relative;
+      }
+
+      .branch-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .branch-item-title {
+        font-weight: 600;
+        color: #f0f6fc;
+        font-size: 14px;
+      }
+
+      .branch-item-actions {
+        display: flex;
+        gap: 5px;
+      }
+
+      .sync-button {
+        width: 100%;
+        margin-top: 20px;
+        padding: 12px;
+        font-size: 16px;
+      }
+
+      .process-log {
+        background: #161b22;
+        border-radius: 6px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        border: 1px solid #30363d;
+      }
+
+      .section {
+        margin-bottom: 20px;
+        padding: 15px;
+        border-left: 4px solid #58a6ff;
+        background: #0d1117;
+        border-radius: 6px;
+        border: 1px solid #30363d;
+      }
+
+      .section.success {
+        border-left-color: #3fb950;
+        background: rgba(46, 160, 67, 0.1);
+        border-color: rgba(46, 160, 67, 0.3);
+      }
+
+      .section.error {
+        border-left-color: #f85149;
+        background: rgba(248, 81, 73, 0.1);
+        border-color: rgba(248, 81, 73, 0.3);
+      }
+
+      .section.processing {
+        border-left-color: #58a6ff;
+        background: rgba(88, 166, 255, 0.1);
+        border-color: rgba(88, 166, 255, 0.3);
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .section-title {
+        font-weight: 600;
+        font-size: 16px;
+        color: #f0f6fc;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .section-actions {
+        display: flex;
+        gap: 5px;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .status-badge.processing {
+        background: #1f6feb;
+        color: white;
+      }
+
+      .status-badge.success {
+        background: #238636;
+        color: white;
+      }
+
+      .status-badge.error {
+        background: #da3633;
+        color: white;
+      }
+
+      .status-badge.pending {
+        background: #6e7681;
+        color: white;
+      }
+
+      .section-content {
+        font-size: 14px;
+        color: #c9d1d9;
+        line-height: 1.6;
+      }
+
+      .step-indicator {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .step {
+        flex: 1;
+        padding: 10px;
+        text-align: center;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        position: relative;
+      }
+
+      .step.pending {
+        background: #21262d;
+        color: #6e7681;
+        border: 1px solid #30363d;
+      }
+
+      .step.processing {
+        background: #1f6feb;
+        color: white;
+      }
+
+      .step.success {
+        background: #238636;
+        color: white;
+      }
+
+      .step.error {
+        background: #da3633;
+        color: white;
+      }
+
+      .step-details {
+        margin-top: 10px;
+        padding: 10px;
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        font-size: 12px;
+        display: none;
+      }
+
+      .step-details.show {
+        display: block;
+      }
+
+      .step-details-content {
+        font-family: "Courier New", monospace;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 200px;
+        overflow-y: auto;
+        color: #c9d1d9;
+      }
+
+      .error-details {
+        margin-top: 10px;
+        padding: 10px;
+        background: rgba(248, 81, 73, 0.15);
+        border: 1px solid rgba(248, 81, 73, 0.3);
+        border-radius: 6px;
+        font-size: 12px;
+        font-family: "Courier New", monospace;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 200px;
+        overflow-y: auto;
+        color: #f85149;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6e7681;
+      }
+
+      .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 10px;
+      }
+
+      .icon-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 5px;
+        color: #58a6ff;
+        transition: all 0.3s;
+      }
+
+      .icon-btn:hover {
+        color: #79c0ff;
+        transform: scale(1.1);
+      }
+
+      /* Modal */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        overflow: auto;
+        backdrop-filter: blur(4px);
+      }
+
+      .modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-content {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #30363d;
+      }
+
+      .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #f0f6fc;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #6e7681;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.3s;
+      }
+
+      .modal-close:hover {
+        color: #f85149;
+        background: rgba(248, 81, 73, 0.1);
+      }
+
+      .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        background: #0d1117;
+        border: 1px solid #30363d;
+        padding: 15px;
+        border-radius: 6px;
+        color: #c9d1d9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="left-panel">
+        <h1>Directus Schema Sync</h1>
+
+        <div class="form-group">
+          <h2>Main Directus</h2>
+          <label for="main-url">Directus URL</label>
+          <input
+            type="url"
+            id="main-url"
+            placeholder=""
+          />
+
+          <label for="main-token" style="margin-top: 10px">Access Token</label>
+          <input
+            type="text"
+            id="main-token"
+            placeholder=""
+          />
+        </div>
+
+        <div class="form-group">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 15px;
+            "
+          >
+            <h2 style="margin: 0; border: none; padding: 0">Branch Directus</h2>
+            <button class="btn btn-secondary" onclick="addBranch()">
+              + Add Branch
+            </button>
+          </div>
+          <div id="branches-list"></div>
+        </div>
+
+        <button
+          class="btn btn-primary sync-button"
+          onclick="startSync()"
+          id="sync-btn"
+        >
+          Start Sync
+        </button>
+      </div>
+
+      <div class="right-panel">
+        <h1>Sync Process</h1>
+        <div class="process-log" id="process-log">
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p>No sync process started yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for Snapshot -->
+    <div id="snapshot-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title">Snapshot Data</div>
+          <button class="modal-close" onclick="closeSnapshotModal()">×</button>
+        </div>
+        <div class="modal-body" id="snapshot-modal-body"></div>
+      </div>
+    </div>
+
+    <script>
+      let branches = [];
+      let snapshot = null;
+      let isSyncing = false;
+      let syncState = {
+        snapshot: {
+          status: "pending", // pending, processing, success, error
+          data: null,
+          error: null,
+        },
+        branches: {}, // branchId -> { status, steps: [{ name, status, data, error }] }
+      };
+
+      function addBranch() {
+        const branchId = Date.now();
+        branches.push({
+          id: branchId,
+          url: "",
+          token: "",
+        });
+        syncState.branches[branchId] = {
+          status: "pending",
+          steps: [
+            { name: "Diff", status: "pending", data: null, error: null },
+            { name: "Apply", status: "pending", data: null, error: null },
+          ],
+        };
+        renderBranches();
+        renderProcessLog();
+      }
+
+      function removeBranch(id) {
+        branches = branches.filter((b) => b.id !== id);
+        delete syncState.branches[id];
+        renderBranches();
+        renderProcessLog();
+      }
+
+      function renderBranches() {
+        const container = document.getElementById("branches-list");
+        if (branches.length === 0) {
+          container.innerHTML =
+            '<p style="color: #95a5a6; font-size: 14px; text-align: center; padding: 20px;">No branch Directus added yet</p>';
+          return;
+        }
+
+        container.innerHTML = branches
+          .map(
+            (branch) => `
+                <div class="branch-item">
+                    <div class="branch-item-header">
+                        <span class="branch-item-title">Branch ${
+                          branches.indexOf(branch) + 1
+                        }</span>
+                        <div class="branch-item-actions">
+                            <button class="btn btn-danger" onclick="removeBranch(${
+                              branch.id
+                            })">Remove</button>
+                        </div>
+                    </div>
+                    <label>Directus URL</label>
+                    <input type="url" 
+                           value="${branch.url}" 
+                           onchange="updateBranch(${
+                             branch.id
+                           }, 'url', this.value)"
+                           placeholder="" />
+                    <label style="margin-top: 10px;">Access Token</label>
+                    <input type="text" 
+                           value="${branch.token}" 
+                           onchange="updateBranch(${
+                             branch.id
+                           }, 'token', this.value)"
+                           placeholder="" />
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      function updateBranch(id, field, value) {
+        const branch = branches.find((b) => b.id === id);
+        if (branch) {
+          branch[field] = value;
+        }
+      }
+
+      function renderProcessLog() {
+        const log = document.getElementById("process-log");
+        const emptyState = log.querySelector(".empty-state");
+
+        // Check if there's any content to show
+        const hasSnapshot = syncState.snapshot.status !== "pending";
+        const hasBranches = Object.keys(syncState.branches).length > 0;
+
+        if (!hasSnapshot && !hasBranches) {
+          if (!emptyState) {
+            log.innerHTML = `
+              <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <p>No sync process started yet</p>
+              </div>
+            `;
+          }
+          return;
+        }
+
+        let html = "";
+
+        // Snapshot Section
+        if (hasSnapshot) {
+          const snapshotState = syncState.snapshot;
+          const statusClass = snapshotState.status;
+          const statusBadge = snapshotState.status.toUpperCase();
+          const statusColor =
+            snapshotState.status === "success"
+              ? "#27ae60"
+              : snapshotState.status === "error"
+              ? "#e74c3c"
+              : snapshotState.status === "processing"
+              ? "#3498db"
+              : "#95a5a6";
+
+          html += `
+            <div class="section ${statusClass}" id="snapshot-section">
+              <div class="section-header">
+                <div class="section-title">
+                  <span>Snapshot</span>
+                  <span class="status-badge ${statusClass}">${statusBadge}</span>
+                </div>
+                <div class="section-actions">
+                  ${
+                    snapshotState.status === "success" && snapshot
+                      ? `
+                    <button class="icon-btn" onclick="showSnapshotModal()" title="View Snapshot">👁️</button>
+                  `
+                      : ""
+                  }
+                </div>
+              </div>
+              <div class="section-content">
+                ${
+                  snapshotState.status === "processing"
+                    ? "Fetching schema snapshot from main Directus..."
+                    : ""
+                }
+                ${
+                  snapshotState.status === "success"
+                    ? `Successfully retrieved snapshot (${
+                        snapshot?.collections?.length || 0
+                      } collections)`
+                    : ""
+                }
+                ${
+                  snapshotState.status === "error"
+                    ? `Error: ${snapshotState.error || "Unknown error"}`
+                    : ""
+                }
+                ${
+                  snapshotState.status === "error" && snapshotState.errorDetails
+                    ? `
+                  <div class="error-details">${escapeHtml(
+                    snapshotState.errorDetails
+                  )}</div>
+                `
+                    : ""
+                }
+              </div>
+            </div>
+          `;
+        }
+
+        // Branch Sections
+        branches.forEach((branch) => {
+          const branchState = syncState.branches[branch.id];
+          if (!branchState) return;
+
+          const statusClass = branchState.status;
+          const statusBadge = branchState.status.toUpperCase();
+
+          html += `
+            <div class="section ${statusClass}" id="branch-section-${
+            branch.id
+          }">
+              <div class="section-header">
+                <div class="section-title">
+                  <span>Branch: ${branch.url || "Not configured"}</span>
+                  <span class="status-badge ${statusClass}">${statusBadge}</span>
+                </div>
+                <div class="section-actions">
+                  ${
+                    branchState.status === "error"
+                      ? `
+                    <button class="btn btn-warning" onclick="retryBranch(${branch.id})">Retry</button>
+                  `
+                      : ""
+                  }
+                </div>
+              </div>
+              <div class="section-content">
+                <div class="step-indicator">
+                  ${branchState.steps
+                    .map(
+                      (step, index) => `
+                    <div class="step ${
+                      step.status
+                    }" onclick="toggleStepDetails(${branch.id}, ${index})">
+                      ${step.name}
+                      ${step.status === "success" && step.data ? " ✓" : ""}
+                      ${step.status === "error" ? " ✗" : ""}
+                    </div>
+                  `
+                    )
+                    .join("")}
+                </div>
+                ${branchState.steps
+                  .map(
+                    (step, index) => `
+                  <div class="step-details" id="step-details-${
+                    branch.id
+                  }-${index}">
+                    <div class="step-details-content">
+                      ${
+                        step.data
+                          ? escapeHtml(JSON.stringify(step.data, null, 2))
+                          : ""
+                      }
+                      ${step.error ? escapeHtml(step.error) : ""}
+                    </div>
+                  </div>
+                `
+                  )
+                  .join("")}
+                ${
+                  branchState.error
+                    ? `
+                  <div class="error-details">${escapeHtml(
+                    branchState.error
+                  )}</div>
+                `
+                    : ""
+                }
+              </div>
+            </div>
+          `;
+        });
+
+        log.innerHTML = html;
+      }
+
+      function toggleStepDetails(branchId, stepIndex) {
+        const details = document.getElementById(
+          `step-details-${branchId}-${stepIndex}`
+        );
+        if (details) {
+          details.classList.toggle("show");
+        }
+      }
+
+      function showSnapshotModal() {
+        const modal = document.getElementById("snapshot-modal");
+        const modalBody = document.getElementById("snapshot-modal-body");
+        if (snapshot) {
+          modalBody.textContent = JSON.stringify(snapshot, null, 2);
+          modal.classList.add("show");
+        }
+      }
+
+      function closeSnapshotModal() {
+        const modal = document.getElementById("snapshot-modal");
+        modal.classList.remove("show");
+      }
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("snapshot-modal");
+        if (event.target === modal) {
+          closeSnapshotModal();
+        }
+      };
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      async function startSync() {
+        const mainUrl = document.getElementById("main-url").value.trim();
+        const mainToken = document.getElementById("main-token").value.trim();
+
+        if (!mainUrl || !mainToken) {
+          alert("Main Directus URL and Token are required");
+          return;
+        }
+
+        if (branches.length === 0) {
+          alert("At least one branch Directus is required");
+          return;
+        }
+
+        const invalidBranches = branches.filter(
+          (b) => !b.url.trim() || !b.token.trim()
+        );
+        if (invalidBranches.length > 0) {
+          alert(
+            `${invalidBranches.length} branch(es) have missing URL or Token`
+          );
+          return;
+        }
+
+        isSyncing = true;
+        document.getElementById("sync-btn").disabled = true;
+        document.getElementById("sync-btn").textContent = "Syncing...";
+
+        try {
+          // Step 1: Get snapshot from main Directus
+          syncState.snapshot.status = "processing";
+          renderProcessLog();
+
+          const snapshotUrl = `${mainUrl}/schema/snapshot?export=json&access_token=${mainToken}`;
+          const snapshotResponse = await fetch(snapshotUrl, {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+          });
+
+          if (!snapshotResponse.ok) {
+            let errorText = "";
+            try {
+              errorText = await snapshotResponse.text();
+            } catch (e) {
+              errorText = `Unable to read error response: ${e.message}`;
+            }
+            throw new Error(
+              `Failed to get snapshot: ${snapshotResponse.status} ${snapshotResponse.statusText}\n${errorText}`
+            );
+          }
+
+          let snapshotData;
+          try {
+            snapshotData = await snapshotResponse.json();
+          } catch (e) {
+            // If we can't parse JSON, try to get text for error message
+            let responseText = "";
+            try {
+              const clonedResponse = snapshotResponse.clone();
+              responseText = await clonedResponse.text();
+            } catch (textError) {
+              responseText = "Unable to read response";
+            }
+            throw new Error(
+              `Failed to parse snapshot response: ${e.message}\nResponse: ${responseText}`
+            );
+          }
+
+          snapshot = snapshotData;
+          syncState.snapshot.status = "success";
+          syncState.snapshot.data = snapshot;
+          renderProcessLog();
+
+          // Step 2: Process each branch
+          for (const branch of branches) {
+            await processBranch(branch, snapshot);
+          }
+        } catch (error) {
+          syncState.snapshot.status = "error";
+          syncState.snapshot.error = error.message;
+          syncState.snapshot.errorDetails =
+            error.toString() + "\n" + (error.stack || "");
+          renderProcessLog();
+        } finally {
+          isSyncing = false;
+          document.getElementById("sync-btn").disabled = false;
+          document.getElementById("sync-btn").textContent = "Start Sync";
+        }
+      }
+
+      async function retryBranch(branchId) {
+        const branch = branches.find((b) => b.id === branchId);
+        if (!branch || !snapshot) {
+          alert("Branch not found or snapshot not available");
+          return;
+        }
+
+        const branchState = syncState.branches[branchId];
+        if (!branchState) return;
+
+        // Reset branch state but keep completed steps
+        const failedStepIndex = branchState.steps.findIndex(
+          (s) => s.status === "error"
+        );
+
+        if (failedStepIndex === -1) {
+          // If no error step, reset from beginning
+          branchState.status = "processing";
+          branchState.steps.forEach((step) => {
+            if (step.status !== "success") {
+              step.status = "pending";
+              step.error = null;
+            }
+          });
+        } else {
+          // Resume from failed step
+          branchState.status = "processing";
+          branchState.error = null;
+        }
+
+        renderProcessLog();
+        await processBranch(branch, snapshot, failedStepIndex);
+      }
+
+      async function processBranch(branch, snapshot, startFromStep = 0) {
+        const branchState = syncState.branches[branch.id];
+        if (!branchState) return;
+
+        branchState.status = "processing";
+        renderProcessLog();
+
+        try {
+          // Step 1: Get diff (if not already done)
+          if (startFromStep <= 0 && branchState.steps[0].status !== "success") {
+            branchState.steps[0].status = "processing";
+            renderProcessLog();
+
+            const diffUrl = `${branch.url}/schema/diff?force=true&access_token=${branch.token}`;
+            const diffResponse = await fetch(diffUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify(snapshot),
+            });
+
+            // Handle 204 No Content (no changes detected)
+            if (diffResponse.status === 204) {
+              branchState.steps[0].status = "success";
+              branchState.steps[0].data = {
+                message: "No changes detected (204 No Content)",
+              };
+              branchState.steps[1].status = "success";
+              branchState.steps[1].data = { message: "Schema already in sync" };
+              branchState.status = "success";
+              renderProcessLog();
+              return;
+            }
+
+            if (!diffResponse.ok) {
+              let errorText = "";
+              try {
+                errorText = await diffResponse.text();
+              } catch (e) {
+                errorText = `Unable to read error response: ${e.message}`;
+              }
+              throw new Error(
+                `Failed to get diff: ${diffResponse.status} ${diffResponse.statusText}\n${errorText}`
+              );
+            }
+
+            let diffData;
+            try {
+              diffData = await diffResponse.json();
+            } catch (e) {
+              // If we can't parse JSON, try to get text for error message
+              let responseText = "";
+              try {
+                // Clone response to read text if json() failed
+                const clonedResponse = diffResponse.clone();
+                responseText = await clonedResponse.text();
+              } catch (textError) {
+                responseText = "Unable to read response";
+              }
+              throw new Error(
+                `Failed to parse diff response: ${e.message}\nResponse: ${responseText}`
+              );
+            }
+
+            if (!diffData.data || !diffData.data.hash || !diffData.data.diff) {
+              throw new Error("Invalid diff response structure");
+            }
+
+            const hasChanges =
+              diffData.data.diff.collections?.length > 0 ||
+              diffData.data.diff.fields?.length > 0 ||
+              diffData.data.diff.relations?.length > 0;
+
+            if (!hasChanges) {
+              branchState.steps[0].status = "success";
+              branchState.steps[0].data = { message: "No changes detected" };
+              branchState.steps[1].status = "success";
+              branchState.steps[1].data = { message: "Schema already in sync" };
+              branchState.status = "success";
+              renderProcessLog();
+              return;
+            }
+
+            branchState.steps[0].status = "success";
+            branchState.steps[0].data = {
+              hash: diffData.data.hash,
+              collections: diffData.data.diff.collections?.length || 0,
+              fields: diffData.data.diff.fields?.length || 0,
+              relations: diffData.data.diff.relations?.length || 0,
+              diff: diffData.data.diff,
+            };
+            branchState.diffData = diffData.data; // Store for apply step
+            renderProcessLog();
+          }
+
+          // Step 2: Apply changes (if diff was successful and has changes)
+          if (startFromStep <= 1 && branchState.steps[0].status === "success") {
+            // If diffData is not available, it means no changes were detected (204 or empty diff)
+            // In this case, Apply step should already be marked as success
+            if (!branchState.diffData) {
+              // No changes detected, skip apply
+              if (branchState.steps[1].status !== "success") {
+                branchState.steps[1].status = "success";
+                branchState.steps[1].data = {
+                  message: "Schema already in sync (no changes to apply)",
+                };
+                branchState.status = "success";
+                renderProcessLog();
+              }
+              return;
+            }
+
+            branchState.steps[1].status = "processing";
+            renderProcessLog();
+
+            const applyUrl = `${branch.url}/schema/apply?access_token=${branch.token}`;
+            const applyBody = {
+              hash: branchState.diffData.hash,
+              diff: branchState.diffData.diff,
+            };
+
+            const applyResponse = await fetch(applyUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify(applyBody),
+            });
+
+            if (!applyResponse.ok) {
+              let errorText = "";
+              try {
+                errorText = await applyResponse.text();
+              } catch (e) {
+                errorText = `Unable to read error response: ${e.message}`;
+              }
+              throw new Error(
+                `Failed to apply changes: ${applyResponse.status} ${applyResponse.statusText}\n${errorText}`
+              );
+            }
+
+            let applyData;
+            try {
+              // Handle 204 No Content
+              if (applyResponse.status === 204) {
+                applyData = {
+                  message: "Changes applied successfully (204 No Content)",
+                };
+              } else {
+                applyData = await applyResponse.json();
+              }
+            } catch (e) {
+              // If we can't parse JSON, try to get text for error message
+              let responseText = "";
+              try {
+                const clonedResponse = applyResponse.clone();
+                responseText = await clonedResponse.text();
+              } catch (textError) {
+                responseText = "Unable to read response";
+              }
+              // If response was successful but couldn't parse, consider it success
+              if (applyResponse.ok) {
+                applyData = {
+                  message:
+                    "Changes applied successfully (unable to parse response)",
+                  rawResponse: responseText,
+                };
+              } else {
+                throw new Error(
+                  `Failed to parse apply response: ${e.message}\nResponse: ${responseText}`
+                );
+              }
+            }
+
+            branchState.steps[1].status = "success";
+            branchState.steps[1].data = applyData;
+            branchState.status = "success";
+            renderProcessLog();
+          }
+        } catch (error) {
+          const failedStepIndex = branchState.steps.findIndex(
+            (s) => s.status === "processing"
+          );
+          if (failedStepIndex >= 0) {
+            branchState.steps[failedStepIndex].status = "error";
+            branchState.steps[failedStepIndex].error = error.toString();
+          }
+          branchState.status = "error";
+          branchState.error = error.toString();
+          renderProcessLog();
+        }
+      }
+
+      // Initialize
+      renderBranches();
+      renderProcessLog();
+    </script>
+  </body>
+</html>
